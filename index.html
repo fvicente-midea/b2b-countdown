@@ -1,0 +1,170 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+  <title>Countdown Go Live</title>
+
+  <style>
+    * {
+      box-sizing: border-box;
+    }
+
+    body {
+      margin: 0;
+      min-height: 100vh;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      background: #ffffff;
+      font-family: Arial, Helvetica, sans-serif;
+      color: #111111;
+    }
+
+    .countdown-container {
+      text-align: center;
+      padding: 40px;
+    }
+
+    .title {
+      font-size: clamp(24px, 4vw, 48px);
+      font-weight: 400;
+      margin-bottom: 30px;
+    }
+
+    #countdown {
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      gap: 28px;
+    }
+
+    .time {
+      min-width: 100px;
+    }
+
+    .number {
+      display: block;
+      font-size: clamp(42px, 8vw, 90px);
+      font-weight: 700;
+      line-height: 1;
+    }
+
+    .label {
+      display: block;
+      margin-top: 10px;
+      font-size: 14px;
+      text-transform: uppercase;
+      letter-spacing: 2px;
+      color: #777;
+    }
+
+    @media (max-width: 600px) {
+      #countdown {
+        gap: 14px;
+      }
+
+      .time {
+        min-width: 60px;
+      }
+
+      .label {
+        font-size: 10px;
+        letter-spacing: 1px;
+      }
+    }
+  </style>
+</head>
+
+<body>
+
+  <main class="countdown-container">
+
+    <div class="title">
+      Faltam
+    </div>
+
+    <div id="countdown">
+
+      <div class="time">
+        <span class="number" id="days">00</span>
+        <span class="label">Dias</span>
+      </div>
+
+      <div class="time">
+        <span class="number" id="hours">00</span>
+        <span class="label">Horas</span>
+      </div>
+
+      <div class="time">
+        <span class="number" id="minutes">00</span>
+        <span class="label">Minutos</span>
+      </div>
+
+      <div class="time">
+        <span class="number" id="seconds">00</span>
+        <span class="label">Segundos</span>
+      </div>
+
+    </div>
+
+    <div class="title" style="margin-top: 30px; margin-bottom: 0;">
+      para o Go Live
+    </div>
+
+  </main>
+
+  <script>
+    // 14/12/2026 às 18:00 no horário de São Paulo (UTC-3)
+    const goLive = new Date("2026-12-14T18:00:00-03:00").getTime();
+
+    function updateCountdown() {
+
+      const now = new Date().getTime();
+      const distance = goLive - now;
+
+      if (distance <= 0) {
+        document.getElementById("days").textContent = "00";
+        document.getElementById("hours").textContent = "00";
+        document.getElementById("minutes").textContent = "00";
+        document.getElementById("seconds").textContent = "00";
+        return;
+      }
+
+      const days = Math.floor(distance / (1000 * 60 * 60 * 24));
+
+      const hours = Math.floor(
+        (distance % (1000 * 60 * 60 * 24)) /
+        (1000 * 60 * 60)
+      );
+
+      const minutes = Math.floor(
+        (distance % (1000 * 60 * 60)) /
+        (1000 * 60)
+      );
+
+      const seconds = Math.floor(
+        (distance % (1000 * 60)) /
+        1000
+      );
+
+      document.getElementById("days").textContent =
+        String(days).padStart(2, "0");
+
+      document.getElementById("hours").textContent =
+        String(hours).padStart(2, "0");
+
+      document.getElementById("minutes").textContent =
+        String(minutes).padStart(2, "0");
+
+      document.getElementById("seconds").textContent =
+        String(seconds).padStart(2, "0");
+    }
+
+    updateCountdown();
+    setInterval(updateCountdown, 1000);
+  </script>
+
+</body>
+</html>
