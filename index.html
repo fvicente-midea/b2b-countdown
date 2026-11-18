@@ -20,6 +20,7 @@
       background: #ffffff;
       font-family: Arial, Helvetica, sans-serif;
       color: #111111;
+      cursor: default;
     }
 
     .countdown-container {
@@ -75,7 +76,7 @@
 
     /* =========================================
        EFEITO VERMELHO
-       Ativado em 00, 05, 10, 15... 55
+       00, 05, 10, 15, 20 ... 55
        ========================================= */
 
     .countdown-container.alert .title,
@@ -90,17 +91,101 @@
     .countdown-container.alert .number {
       color: #ff1a1a;
 
-      /* Borda fina em vermelho escuro */
-      -webkit-text-stroke: 0.5px #bf0808;
+      -webkit-text-stroke: 0.7px #7a0000;
 
-      /* Glow vermelho suave */
       text-shadow:
         0 0 4px rgba(255, 0, 0, 0.35),
         0 0 8px rgba(255, 0, 0, 0.20),
         0 0 14px rgba(160, 0, 0, 0.10);
     }
 
+    /* =========================================
+       AVISO PARA ATIVAR O SOM
+       ========================================= */
+
+    #soundStatus {
+      margin-top: 28px;
+      height: 18px;
+
+      font-size: 12px;
+      color: #999999;
+
+      letter-spacing: 1px;
+
+      opacity: 0;
+
+      transition:
+        opacity 0.4s ease,
+        color 0.3s ease;
+
+      cursor: pointer;
+      user-select: none;
+    }
+
+    #soundStatus.visible {
+      opacity: 1;
+    }
+
+    #soundStatus.success {
+      color: #777777;
+    }
+
+    /* =========================================
+       PLAYER YOUTUBE INVISÍVEL
+
+       Continua existindo tecnicamente na página,
+       mas fica completamente fora da área visível.
+       ========================================= */
+
+    #youtubePlayerContainer {
+      position: fixed;
+
+      width: 1px;
+      height: 1px;
+
+      left: -9999px;
+      top: -9999px;
+
+      overflow: hidden;
+
+      opacity: 0;
+
+      pointer-events: none;
+    }
+
+    /* =========================================
+       CRÉDITO DA MÚSICA
+       ========================================= */
+
+    #musicCredit {
+      position: fixed;
+      bottom: 8px;
+      left: 0;
+      right: 0;
+
+      text-align: center;
+
+      font-size: 9px;
+      color: #bbbbbb;
+
+      opacity: 0.7;
+    }
+
+    #musicCredit a {
+      color: #aaaaaa;
+      text-decoration: none;
+    }
+
+    #musicCredit a:hover {
+      text-decoration: underline;
+    }
+
+    /* =========================================
+       RESPONSIVO
+       ========================================= */
+
     @media (max-width: 600px) {
+
       #countdown {
         gap: 14px;
       }
@@ -119,120 +204,1013 @@
 
 <body>
 
-  <main class="countdown-container" id="countdownContainer">
+  <!-- =========================================
+       PLAYER YOUTUBE INVISÍVEL
+       ========================================= -->
+
+  <div id="youtubePlayerContainer">
+    <div id="youtubePlayer"></div>
+  </div>
+
+
+  <main
+    class="countdown-container"
+    id="countdownContainer"
+  >
 
     <div class="title">
       Faltam
     </div>
 
+
     <div id="countdown">
 
       <div class="time">
-        <span class="number" id="days">00</span>
-        <span class="label">Dias</span>
+
+        <span
+          class="number"
+          id="days"
+        >
+          00
+        </span>
+
+        <span class="label">
+          Dias
+        </span>
+
       </div>
 
-      <div class="time">
-        <span class="number" id="hours">00</span>
-        <span class="label">Horas</span>
-      </div>
 
       <div class="time">
-        <span class="number" id="minutes">00</span>
-        <span class="label">Minutos</span>
+
+        <span
+          class="number"
+          id="hours"
+        >
+          00
+        </span>
+
+        <span class="label">
+          Horas
+        </span>
+
       </div>
 
+
       <div class="time">
-        <span class="number" id="seconds">00</span>
-        <span class="label">Segundos</span>
+
+        <span
+          class="number"
+          id="minutes"
+        >
+          00
+        </span>
+
+        <span class="label">
+          Minutos
+        </span>
+
+      </div>
+
+
+      <div class="time">
+
+        <span
+          class="number"
+          id="seconds"
+        >
+          00
+        </span>
+
+        <span class="label">
+          Segundos
+        </span>
+
       </div>
 
     </div>
 
+
     <div
       class="title"
-      style="margin-top: 30px; margin-bottom: 0;"
+      style="
+        margin-top: 30px;
+        margin-bottom: 0;
+      "
     >
       para o Go Live
     </div>
 
+
+    <div
+      id="soundStatus"
+      class="visible"
+    >
+      🔊 Clique para ativar o som
+    </div>
+
   </main>
 
+
+  <!--
+       Crédito exigido pela licença da música.
+  -->
+
+  <div id="musicCredit">
+
+    Música:
+    Darren Curtis - It's In The Fog |
+    CC BY 3.0
+
+  </div>
+
+
+  <!-- =========================================
+       YOUTUBE IFRAME PLAYER API
+       ========================================= -->
+
+  <script src="https://www.youtube.com/iframe_api"></script>
+
+
   <script>
-    // 14/12/2026 às 10:00 no horário de São Paulo (UTC-3)
+
+    /* =========================================
+       CONFIGURAÇÃO DO COUNTDOWN
+       ========================================= */
+
     const goLive = new Date(
       "2026-12-14T10:00:00-03:00"
     ).getTime();
 
+
     const countdownContainer =
-      document.getElementById("countdownContainer");
+      document.getElementById(
+        "countdownContainer"
+      );
+
+
+    const soundStatus =
+      document.getElementById(
+        "soundStatus"
+      );
+
+
+    /* =========================================
+       YOUTUBE
+       ========================================= */
+
+    let youtubePlayer = null;
+
+    let youtubeReady = false;
+
+    let youtubeStarted = false;
+
+
+    /*
+      ID do vídeo:
+
+      https://www.youtube.com/watch?v=5oF5lS0sajs
+
+      ID = 5oF5lS0sajs
+    */
+
+    const youtubeVideoId =
+      "5oF5lS0sajs";
+
+
+    /* =========================================
+       YOUTUBE API PRONTA
+       ========================================= */
+
+    function onYouTubeIframeAPIReady() {
+
+      youtubePlayer = new YT.Player(
+        "youtubePlayer",
+        {
+
+          width: "1",
+
+          height: "1",
+
+          videoId: youtubeVideoId,
+
+          playerVars: {
+
+            /*
+              Sem controles.
+            */
+
+            controls: 0,
+
+            /*
+              Sem autoplay aqui.
+
+              Tentaremos iniciar depois,
+              respeitando as regras do navegador.
+            */
+
+            autoplay: 0,
+
+            /*
+              Loop do vídeo.
+            */
+
+            loop: 1,
+
+            /*
+              Necessário para loop de
+              um único vídeo no YouTube.
+            */
+
+            playlist: youtubeVideoId,
+
+            /*
+              Reduz elementos extras.
+            */
+
+            rel: 0,
+
+            /*
+              Reprodução inline.
+            */
+
+            playsinline: 1
+          },
+
+          events: {
+
+            onReady:
+              onYouTubePlayerReady,
+
+            onStateChange:
+              onYouTubePlayerStateChange
+
+          }
+        }
+      );
+    }
+
+
+    /* =========================================
+       PLAYER PRONTO
+       ========================================= */
+
+    function onYouTubePlayerReady(event) {
+
+      youtubeReady = true;
+
+
+      /*
+        Volume em 25%.
+
+        A API do YouTube utiliza valores
+        de 0 até 100.
+      */
+
+      event.target.setVolume(100);
+
+
+      console.log(
+        "Player do YouTube pronto."
+      );
+    }
+
+
+    /* =========================================
+       LOOP DE SEGURANÇA
+       ========================================= */
+
+    function onYouTubePlayerStateChange(event) {
+
+      /*
+        Se por algum motivo o loop automático
+        não acontecer, reinicia o vídeo.
+      */
+
+      if (
+        event.data === YT.PlayerState.ENDED &&
+        youtubeStarted
+      ) {
+
+        youtubePlayer.seekTo(
+          0,
+          true
+        );
+
+
+        youtubePlayer.playVideo();
+      }
+    }
+
+
+    /* =========================================
+       INICIA MÚSICA DO YOUTUBE
+       ========================================= */
+
+    function startYouTubeMusic() {
+
+      if (
+        !youtubeReady ||
+        !youtubePlayer
+      ) {
+
+        console.log(
+          "YouTube ainda não está pronto."
+        );
+
+
+        return false;
+      }
+
+
+      try {
+
+        /*
+          Reforça o volume em 25%.
+        */
+
+        youtubePlayer.setVolume(25);
+
+
+        /*
+          Garante que não esteja mutado.
+        */
+
+        youtubePlayer.unMute();
+
+
+        /*
+          Inicia o vídeo.
+        */
+
+        youtubePlayer.playVideo();
+
+
+        youtubeStarted = true;
+
+
+        console.log(
+          "Música do YouTube iniciada em 25%."
+        );
+
+
+        return true;
+
+      } catch (error) {
+
+        console.log(
+          "Não foi possível iniciar o YouTube:",
+          error
+        );
+
+
+        return false;
+      }
+    }
+
+
+    /* =========================================
+       SISTEMA DE ÁUDIO DO TIC
+       ========================================= */
+
+    let audioContext = null;
+
+    let soundEnabled = false;
+
+    let audioAttempted = false;
+
+
+    /* =========================================
+       CRIAR AUDIO CONTEXT
+       ========================================= */
+
+    function createAudioContext() {
+
+      if (audioContext) {
+        return audioContext;
+      }
+
+
+      const AudioContextClass =
+        window.AudioContext ||
+        window.webkitAudioContext;
+
+
+      if (!AudioContextClass) {
+
+        console.log(
+          "Web Audio API não suportada."
+        );
+
+
+        return null;
+      }
+
+
+      audioContext =
+        new AudioContextClass();
+
+
+      return audioContext;
+    }
+
+
+    /* =========================================
+       SOM DE TIC
+       ========================================= */
+
+    function playTick() {
+
+      if (
+        !soundEnabled ||
+        !audioContext ||
+        audioContext.state !== "running"
+      ) {
+        return;
+      }
+
+
+      const now =
+        audioContext.currentTime;
+
+
+      const oscillator =
+        audioContext.createOscillator();
+
+
+      const gain =
+        audioContext.createGain();
+
+
+      oscillator.connect(gain);
+
+      gain.connect(
+        audioContext.destination
+      );
+
+
+      oscillator.frequency.setValueAtTime(
+        1100,
+        now
+      );
+
+
+      oscillator.type = "sine";
+
+
+      gain.gain.setValueAtTime(
+        0.08,
+        now
+      );
+
+
+      gain.gain.exponentialRampToValueAtTime(
+        0.001,
+        now + 0.05
+      );
+
+
+      oscillator.start(now);
+
+
+      oscillator.stop(
+        now + 0.05
+      );
+    }
+
+
+    /* =========================================
+       SOM DE CONFIRMAÇÃO
+       ========================================= */
+
+    function playConfirmationTick() {
+
+      if (
+        !audioContext ||
+        audioContext.state !== "running"
+      ) {
+        return;
+      }
+
+
+      const now =
+        audioContext.currentTime;
+
+
+      const oscillator =
+        audioContext.createOscillator();
+
+
+      const gain =
+        audioContext.createGain();
+
+
+      oscillator.connect(gain);
+
+      gain.connect(
+        audioContext.destination
+      );
+
+
+      oscillator.frequency.setValueAtTime(
+        900,
+        now
+      );
+
+
+      oscillator.type = "sine";
+
+
+      gain.gain.setValueAtTime(
+        0.06,
+        now
+      );
+
+
+      gain.gain.exponentialRampToValueAtTime(
+        0.001,
+        now + 0.07
+      );
+
+
+      oscillator.start(now);
+
+
+      oscillator.stop(
+        now + 0.07
+      );
+    }
+
+
+    /* =========================================
+       ESCONDE AVISO DE SOM
+       ========================================= */
+
+    function hideSoundMessage() {
+
+      soundStatus.classList.remove(
+        "visible"
+      );
+
+
+      setTimeout(() => {
+
+        soundStatus.textContent = "";
+
+      }, 400);
+    }
+
+
+    /* =========================================
+       MOSTRA FALLBACK
+       ========================================= */
+
+    function showSoundFallback() {
+
+      soundStatus.textContent =
+        "🔊 Clique para ativar o som";
+
+
+      soundStatus.classList.add(
+        "visible"
+      );
+
+
+      soundStatus.classList.remove(
+        "success"
+      );
+    }
+
+
+    /* =========================================
+       ATIVAR ÁUDIO
+       ========================================= */
+
+    async function activateAudio() {
+
+      const context =
+        createAudioContext();
+
+
+      if (!context) {
+        return;
+      }
+
+
+      try {
+
+        /*
+          Libera o AudioContext responsável
+          pelo tic.
+        */
+
+        if (
+          context.state === "suspended"
+        ) {
+
+          await context.resume();
+        }
+
+
+        /*
+          Verifica se o tic foi liberado.
+        */
+
+        if (
+          context.state === "running"
+        ) {
+
+          soundEnabled = true;
+
+
+          /*
+            Toca confirmação.
+          */
+
+          playConfirmationTick();
+
+
+          /*
+            Agora inicia a música do YouTube.
+          */
+
+          startYouTubeMusic();
+
+
+          soundStatus.textContent =
+            "✓ Som ativado";
+
+
+          soundStatus.classList.add(
+            "visible",
+            "success"
+          );
+
+
+          /*
+            Esconde depois de 800ms.
+          */
+
+          setTimeout(() => {
+
+            hideSoundMessage();
+
+          }, 800);
+
+
+          return true;
+        }
+
+      } catch (error) {
+
+        console.log(
+          "Não foi possível ativar o áudio:",
+          error
+        );
+      }
+
+
+      soundEnabled = false;
+
+
+      showSoundFallback();
+
+
+      return false;
+    }
+
+
+    /* =========================================
+       TENTATIVA DE AUTOPLAY
+       ========================================= */
+
+    async function attemptAutoplay() {
+
+      if (audioAttempted) {
+        return;
+      }
+
+
+      audioAttempted = true;
+
+
+      const context =
+        createAudioContext();
+
+
+      if (!context) {
+        return;
+      }
+
+
+      try {
+
+        if (
+          context.state === "suspended"
+        ) {
+
+          await context.resume();
+        }
+
+
+        if (
+          context.state === "running"
+        ) {
+
+          soundEnabled = true;
+
+
+          startYouTubeMusic();
+
+
+          console.log(
+            "Tentativa de autoplay realizada."
+          );
+
+
+          hideSoundMessage();
+
+        } else {
+
+          showSoundFallback();
+        }
+
+      } catch (error) {
+
+        console.log(
+          "Autoplay bloqueado:",
+          error
+        );
+
+
+        soundEnabled = false;
+
+
+        showSoundFallback();
+      }
+    }
+
+
+    /* =========================================
+       CLIQUE PARA ATIVAR SOM
+       ========================================= */
+
+    async function enableSoundByInteraction() {
+
+      /*
+        Mesmo que o tic já esteja ativo,
+        executamos novamente caso o YouTube
+        ainda não tenha iniciado.
+      */
+
+      const activated =
+        await activateAudio();
+
+
+      if (activated) {
+
+        /*
+          Se por alguma razão a API do YouTube
+          ainda estava carregando no momento
+          do clique, fazemos algumas tentativas
+          adicionais.
+        */
+
+        if (!youtubeStarted) {
+
+          setTimeout(
+            startYouTubeMusic,
+            500
+          );
+
+
+          setTimeout(
+            startYouTubeMusic,
+            1500
+          );
+        }
+      }
+    }
+
+
+    /* =========================================
+       EVENTOS DE FALLBACK
+       ========================================= */
+
+    document.addEventListener(
+      "click",
+      enableSoundByInteraction
+    );
+
+
+    document.addEventListener(
+      "touchstart",
+      enableSoundByInteraction,
+      {
+        passive: true
+      }
+    );
+
+
+    /* =========================================
+       COUNTDOWN
+       ========================================= */
 
     function updateCountdown() {
 
-      const now = new Date().getTime();
-      const distance = goLive - now;
+      const now =
+        new Date().getTime();
+
+
+      const distance =
+        goLive - now;
+
+
+      /* =======================================
+         COUNTDOWN FINALIZADO
+         ======================================= */
 
       if (distance <= 0) {
 
-        document.getElementById("days").textContent = "00";
-        document.getElementById("hours").textContent = "00";
-        document.getElementById("minutes").textContent = "00";
-        document.getElementById("seconds").textContent = "00";
+        document.getElementById(
+          "days"
+        ).textContent = "00";
 
-        countdownContainer.classList.remove("alert");
+
+        document.getElementById(
+          "hours"
+        ).textContent = "00";
+
+
+        document.getElementById(
+          "minutes"
+        ).textContent = "00";
+
+
+        document.getElementById(
+          "seconds"
+        ).textContent = "00";
+
+
+        countdownContainer
+          .classList
+          .remove("alert");
+
 
         return;
       }
 
-      const days = Math.floor(
-        distance / (1000 * 60 * 60 * 24)
-      );
 
-      const hours = Math.floor(
-        (distance % (1000 * 60 * 60 * 24)) /
-        (1000 * 60 * 60)
-      );
+      /* =======================================
+         CALCULA TEMPO
+         ======================================= */
 
-      const minutes = Math.floor(
-        (distance % (1000 * 60 * 60)) /
-        (1000 * 60)
-      );
+      const days =
+        Math.floor(
+          distance /
+          (1000 * 60 * 60 * 24)
+        );
 
-      const seconds = Math.floor(
-        (distance % (1000 * 60)) /
-        1000
-      );
 
-      document.getElementById("days").textContent =
-        String(days).padStart(2, "0");
+      const hours =
+        Math.floor(
+          (
+            distance %
+            (1000 * 60 * 60 * 24)
+          ) /
+          (1000 * 60 * 60)
+        );
 
-      document.getElementById("hours").textContent =
-        String(hours).padStart(2, "0");
 
-      document.getElementById("minutes").textContent =
-        String(minutes).padStart(2, "0");
+      const minutes =
+        Math.floor(
+          (
+            distance %
+            (1000 * 60 * 60)
+          ) /
+          (1000 * 60)
+        );
 
-      document.getElementById("seconds").textContent =
-        String(seconds).padStart(2, "0");
 
-      /*
-        Ativa o efeito vermelho
-        a cada múltiplo de 5 segundos:
+      const seconds =
+        Math.floor(
+          (
+            distance %
+            (1000 * 60)
+          ) /
+          1000
+        );
 
-        00, 05, 10, 15, 20, 25,
-        30, 35, 40, 45, 50, 55
-      */
 
-      if (seconds % 5 === 0) {
-        countdownContainer.classList.add("alert");
+      /* =======================================
+         ATUALIZA TELA
+         ======================================= */
+
+      document.getElementById(
+        "days"
+      ).textContent =
+        String(days).padStart(
+          2,
+          "0"
+        );
+
+
+      document.getElementById(
+        "hours"
+      ).textContent =
+        String(hours).padStart(
+          2,
+          "0"
+        );
+
+
+      document.getElementById(
+        "minutes"
+      ).textContent =
+        String(minutes).padStart(
+          2,
+          "0"
+        );
+
+
+      document.getElementById(
+        "seconds"
+      ).textContent =
+        String(seconds).padStart(
+          2,
+          "0"
+        );
+
+
+      /* =======================================
+         EFEITO VERMELHO
+
+         00
+         05
+         10
+         15
+         20
+         25
+         30
+         35
+         40
+         45
+         50
+         55
+         ======================================= */
+
+      if (
+        seconds % 5 === 0
+      ) {
+
+        countdownContainer
+          .classList
+          .add("alert");
+
       } else {
-        countdownContainer.classList.remove("alert");
+
+        countdownContainer
+          .classList
+          .remove("alert");
       }
+
+
+      /* =======================================
+         TIC
+         ======================================= */
+
+      playTick();
     }
+
+
+    /* =========================================
+       INICIALIZAÇÃO
+       ========================================= */
 
     updateCountdown();
 
-    setInterval(updateCountdown, 1000);
+
+    /*
+      Primeiro tenta liberar o áudio
+      automaticamente.
+
+      Caso Chrome/Edge bloqueie,
+      a interação do usuário libera depois.
+    */
+
+    attemptAutoplay();
+
+
+    /*
+      Atualiza o countdown
+      a cada segundo.
+    */
+
+    setInterval(
+      updateCountdown,
+      1000
+    );
+
   </script>
 
 </body>
