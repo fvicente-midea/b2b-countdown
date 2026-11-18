@@ -49,6 +49,35 @@
       font-size: clamp(42px, 8vw, 90px);
       font-weight: 700;
       line-height: 1;
+
+      /* Pisca em vermelho a cada 5 segundos */
+      animation: blinkRed 5s infinite;
+    }
+
+    @keyframes blinkRed {
+      0% {
+        color: #111111;
+      }
+
+      88% {
+        color: #111111;
+      }
+
+      90% {
+        color: #ff0000;
+      }
+
+      94% {
+        color: #111111;
+      }
+
+      97% {
+        color: #ff0000;
+      }
+
+      100% {
+        color: #111111;
+      }
     }
 
     .label {
@@ -116,7 +145,7 @@
   </main>
 
   <script>
-    // 14/12/2026 às 18:00 no horário de São Paulo (UTC-3)
+    // 14/12/2026 às 10:00 no horário de São Paulo (UTC-3)
     const goLive = new Date("2026-12-14T10:00:00-03:00").getTime();
 
     function updateCountdown() {
@@ -132,7 +161,9 @@
         return;
       }
 
-      const days = Math.floor(distance / (1000 * 60 * 60 * 24));
+      const days = Math.floor(
+        distance / (1000 * 60 * 60 * 24)
+      );
 
       const hours = Math.floor(
         (distance % (1000 * 60 * 60 * 24)) /
