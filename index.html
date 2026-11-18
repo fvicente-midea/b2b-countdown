@@ -31,6 +31,10 @@
       font-size: clamp(24px, 4vw, 48px);
       font-weight: 400;
       margin-bottom: 30px;
+
+      transition:
+        color 0.2s ease,
+        text-shadow 0.2s ease;
     }
 
     #countdown {
@@ -50,34 +54,10 @@
       font-weight: 700;
       line-height: 1;
 
-      /* Pisca em vermelho a cada 5 segundos */
-      animation: blinkRed 5s infinite;
-    }
-
-    @keyframes blinkRed {
-      0% {
-        color: #111111;
-      }
-
-      88% {
-        color: #111111;
-      }
-
-      90% {
-        color: #ff0000;
-      }
-
-      94% {
-        color: #111111;
-      }
-
-      97% {
-        color: #ff0000;
-      }
-
-      100% {
-        color: #111111;
-      }
+      transition:
+        color 0.2s ease,
+        text-shadow 0.2s ease,
+        -webkit-text-stroke 0.2s ease;
     }
 
     .label {
@@ -87,6 +67,37 @@
       text-transform: uppercase;
       letter-spacing: 2px;
       color: #777;
+
+      transition:
+        color 0.2s ease,
+        text-shadow 0.2s ease;
+    }
+
+    /* =========================================
+       EFEITO VERMELHO
+       Ativado em 00, 05, 10, 15... 55
+       ========================================= */
+
+    .countdown-container.alert .title,
+    .countdown-container.alert .label {
+      color: #d90000;
+
+      text-shadow:
+        0 0 4px rgba(255, 0, 0, 0.25),
+        0 0 8px rgba(255, 0, 0, 0.12);
+    }
+
+    .countdown-container.alert .number {
+      color: #ff1a1a;
+
+      /* Borda fina em vermelho escuro */
+      -webkit-text-stroke: 0.7px #7a0000;
+
+      /* Glow vermelho suave */
+      text-shadow:
+        0 0 4px rgba(255, 0, 0, 0.35),
+        0 0 8px rgba(255, 0, 0, 0.20),
+        0 0 14px rgba(160, 0, 0, 0.10);
     }
 
     @media (max-width: 600px) {
@@ -108,7 +119,7 @@
 
 <body>
 
-  <main class="countdown-container">
+  <main class="countdown-container" id="countdownContainer">
 
     <div class="title">
       Faltam
@@ -138,7 +149,10 @@
 
     </div>
 
-    <div class="title" style="margin-top: 30px; margin-bottom: 0;">
+    <div
+      class="title"
+      style="margin-top: 30px; margin-bottom: 0;"
+    >
       para o Go Live
     </div>
 
@@ -146,7 +160,12 @@
 
   <script>
     // 14/12/2026 às 10:00 no horário de São Paulo (UTC-3)
-    const goLive = new Date("2026-12-14T10:00:00-03:00").getTime();
+    const goLive = new Date(
+      "2026-12-14T10:00:00-03:00"
+    ).getTime();
+
+    const countdownContainer =
+      document.getElementById("countdownContainer");
 
     function updateCountdown() {
 
@@ -154,10 +173,14 @@
       const distance = goLive - now;
 
       if (distance <= 0) {
+
         document.getElementById("days").textContent = "00";
         document.getElementById("hours").textContent = "00";
         document.getElementById("minutes").textContent = "00";
         document.getElementById("seconds").textContent = "00";
+
+        countdownContainer.classList.remove("alert");
+
         return;
       }
 
@@ -191,9 +214,24 @@
 
       document.getElementById("seconds").textContent =
         String(seconds).padStart(2, "0");
+
+      /*
+        Ativa o efeito vermelho
+        a cada múltiplo de 5 segundos:
+
+        00, 05, 10, 15, 20, 25,
+        30, 35, 40, 45, 50, 55
+      */
+
+      if (seconds % 5 === 0) {
+        countdownContainer.classList.add("alert");
+      } else {
+        countdownContainer.classList.remove("alert");
+      }
     }
 
     updateCountdown();
+
     setInterval(updateCountdown, 1000);
   </script>
 
